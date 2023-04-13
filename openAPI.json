@@ -1,0 +1,89 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "AI Question Answering API",
+    "description": "A RESTful API for generating answers to user queries using IBM Watson Discovery and OpenAI GPT models.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "localhost:3000"
+    }
+  ],
+  "paths": {
+    "/bam": {
+      "post": {
+        "summary": "IBM Watson Discovery endpoint",
+        "description": "Processes the user query and returns the generated answer using IBM Watson Discovery.",
+        "operationId": "postBam",
+        "requestBody": {
+          "description": "User query",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "User's question"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openai_search": {
+      "post": {
+        "summary": "OpenAI GPT endpoint",
+        "description": "Processes the user query and returns the generated answer using an OpenAI GPT model.",
+        "operationId": "postOpenai",
+        "requestBody": {
+          "description": "User query",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "User's question"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
