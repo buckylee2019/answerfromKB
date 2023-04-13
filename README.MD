@@ -90,7 +90,11 @@ curl -X POST -H "Content-Type: application/json" -d '{"query": "What is AI?"}' h
 
 Connect to Watson Assistant, you can use the OpenAPI.json to add your own extension.
 
+For Model in BAM 
+![bam](https://github.com/buckylee2019/answerfromKB/blob/main/screenshot/bloom.png)
 
+For Model in OpenAI
+![openai](https://github.com/buckylee2019/answerfromKB/blob/main/screenshot/chatgpt.png)
 ### License
 
 This project is licensed under the MIT License
