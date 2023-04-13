@@ -95,6 +95,22 @@ For Model in BAM
 
 For Model in OpenAI
 ![openai](https://github.com/buckylee2019/answerfromKB/blob/main/screenshot/chatgpt.png)
+
+
+### Tips 
+
+In case, you don't have any server to use, you can always count on ngrok which expose your port for external use.
+
+## On MacOS
+```
+brew install ngrok -cask 
+```
+
+Expose your port:
+
+``` 
+    ngrok http 8080
+```
 ### License
 
 This project is licensed under the MIT License
