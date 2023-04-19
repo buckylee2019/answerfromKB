@@ -35,7 +35,7 @@ def process_request():
     # Call Watson Discovery
     discovery_response = discovery.query(
         project_id=project_id,
-        collection_ids=[""],
+        collection_ids=collection_list,
         natural_language_query=query,
         count=5
     ).get_result()
