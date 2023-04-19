@@ -13,6 +13,7 @@ api_key = os.environ.get("WATSON_API_KEY")
 url = os.environ.get("WATSON_URL")
 project_id = os.environ.get("WATSON_PROJECT_ID")
 openai.api_key = os.environ.get("OPENAI_API_KEY")
+collection_list = eval(os.environ.get("WD_COLLECTION_IDS"))
 
 authenticator = IAMAuthenticator(api_key)
 discovery = DiscoveryV2(version="2021-09-01", authenticator=authenticator)
@@ -21,7 +22,6 @@ discovery.set_service_url(url)
 # Set up BAM API credentials
 bam_api_key = os.environ.get("BAM_API_KEY")
 bam_url = "https://bam-api.res.ibm.com/v1/generate"
-
 
 @app.route('/bam', methods=['POST'])
 def process_request():
@@ -35,7 +35,7 @@ def process_request():
     # Call Watson Discovery
     discovery_response = discovery.query(
         project_id=project_id,
-        collection_ids=["d564393d-69c3-b301-0000-0187748b6429"],
+        collection_ids=[""],
         natural_language_query=query,
         count=5
     ).get_result()
@@ -124,10 +124,10 @@ def openai_response():
 
     # Call Watson Discovery
     discovery_response = discovery.query(
-        project_id=project_id,
-        collection_ids=["d564393d-69c3-b301-0000-0187748b6429"],
-        natural_language_query=query,
-        count=5
+        project_id = project_id,
+        collection_ids = collection_list,
+        natural_language_query = query,
+        count = 5
     ).get_result()
 
     inputText = "Question: " + query + "?"
