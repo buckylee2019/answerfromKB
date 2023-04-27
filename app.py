@@ -13,6 +13,7 @@ api_key = os.environ.get("WATSON_API_KEY")
 url = os.environ.get("WATSON_URL")
 project_id = os.environ.get("WATSON_PROJECT_ID")
 openai.api_key = os.environ.get("OPENAI_API_KEY")
+collection_list = eval(os.environ.get("WD_COLLECTION_IDS"))
 
 authenticator = IAMAuthenticator(api_key)
 discovery = DiscoveryV2(version="2021-09-01", authenticator=authenticator)
@@ -22,6 +23,7 @@ discovery.set_service_url(url)
 bam_api_key = os.environ.get("BAM_API_KEY")
 bam_url = "https://bam-api.res.ibm.com/v1/generate"
 
+
 def query_watson_discovery(query):
     return discovery.query(
         project_id=project_id,
@@ -30,17 +32,10 @@ def query_watson_discovery(query):
         count=5
     ).get_result()
 
-@app.route('/bam', methods=['POST'])
-def bam_response():
-    data = request.get_json()
 
-    if 'query' not in data:
-        return jsonify({"error": "Missing 'query' in request data."}), 400
 
-    query = data['query']
-
-    # Call Watson Discovery
     discovery_response = query_watson_discovery(query)
+
 
     # Generate the input text for BAM API
     input_text = f"Question: {query}?"
@@ -127,7 +122,9 @@ def openai_watson_discovery_response():
     query = data['query']
 
     # Call Watson Discovery
+
     discovery_response = query_watson_discovery(query)
+
 
     inputText = "Question: " + query + "?"
     prompt = "Given the context provided below, answer the following question：" + query + "\n\n Context: \n"
