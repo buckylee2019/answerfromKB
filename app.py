@@ -5,6 +5,7 @@ from ibm_watson import DiscoveryV2
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from requests import post
 import openai
+from json_utils.json_fix_general import correct_json,add_quotes_to_property_names
 
 app = Flask(__name__)
 
@@ -102,14 +103,32 @@ def query_watson_discovery(query):
     }
     return jsonify(response_data)
 
-def generate_openai_response(prompt):
+def generate_openai_response(messages):
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
+        model = "gpt-3.5-turbo-0301",
+        messages = messages
     )
     return response.choices[0].message.content.strip()
+
+def fix_json(json_string):
+    try:
+        # attempt to parse the string as JSON
+        parsed_json = json.loads(json_string)
+        return parsed_json
+    except json.JSONDecodeError as e:
+        # if there's an error, try to fix it by removing characters before the first open brace or bracket
+        pos = e.pos
+        while pos > 0:
+            pos -= 1
+            if json_string[pos] in {'{', '['}:
+                fixed_json_string = json_string[pos:]
+                try:
+                    parsed_json = json.loads(fixed_json_string)
+                    return parsed_json
+                except json.JSONDecodeError:
+                    pass
+        # if we can't fix the string, raise an exception
+        raise ValueError("Cannot fix JSON string")
 
 @app.route('/openai_watson_discovery_search', methods=['POST'])
 def openai_watson_discovery_response():
@@ -131,7 +150,10 @@ def openai_watson_discovery_response():
     for passage in discovery_response["results"][:3]:
         prompt += "\n" + passage["text"][0]
     prompt += inputText
-    answer = generate_openai_response(prompt)
+    messages = [
+            {"role": "user", "content": prompt}
+        ]
+    answer = generate_openai_response(messages)
     discovery_result = discovery_response["results"][0]
     response_data = {
         "matching_results": 1,
@@ -173,7 +195,10 @@ def openai_response():
     prompt = "Given the context provided below, answer the following question：" + query + "\n\n Context: \n"
 
     prompt += inputText
-    answer = generate_openai_response(prompt)
+    messages = [
+            {"role": "user", "content": prompt}
+        ]
+    answer = generate_openai_response(messages)
     response_data = {
         "matching_results": 1,
         "retrievalDetails": {
@@ -250,6 +275,90 @@ def orchestrator_response():
                 'watson_discovery_search':watson_discovery_response}
     response = method_dict[method]()
     return response
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    req_data = request.get_json()
+    data = req_data['data']
+    memory = req_data['memory']
+
+    format = {
+        "output": {
+            "generic":{
+                "text":"Here is plain text response",
+                "option":{
+                    "title":"title of options",
+                    "options": [
+                        {
+                            "label": "option 1 name",
+                            "value": {
+                                "input": {
+                                    "text": "the text which will sent back as input text to dialog"
+                                }
+                            }
+                        },
+                        {
+                            "label": "option 2 name",
+                            "value": {
+                                "input": {
+                                    "text": "the text which will sent back as input text to dialog"
+                                }
+                            }
+                        },
+                        {
+                            "label": "option 3 name",
+                            "value": {
+                                "input": {
+                                    "text": "the text which will sent back as input text to dialog"
+                                }
+                            }
+                        }
+                    ]                   
+                }             
+            }
+        }
+    }
+    prompt = f'You are AGI-Demo, An ai designed to become a tour guide.\n\
+    Your decisions must always be made independently without seeking user assistance. \
+    Play to your strengths as an LLM and pursue simple strategies with no legal complications.\n\n\
+    Dialog type:\n\
+    1. Option: Options for user to choose which action to do next, can be more than three options. \
+    Note that the text in the options will be sent back to dialog as a input, so this need more details.\n\
+    2. Text: Detail explanation of the answer.\n\n\
+    Constraints:\n\
+    1. ~4000 word limit for short term memory. Your short term memory is short, so immediately save important information to files.\n\
+    2. If you are unsure how you previously did something or want to recall past events, thinking about similar events will help you remember.\n\
+    3. No user assistance.\n4. Make sure option field is not empty and there is always an option \"End conversation\". \n\n\
+    Performance Evaluation:\n\
+    1. Continuously review and analyze your actions to ensure you are performing to the best of your abilities.\n\
+    2. Constructively self-criticize your big-picture behavior constantly.\n\
+    3. Reflect on past decisions and strategies to refine your approach.\n\
+    4. Every command has a cost, so be smart and efficient. Aim to complete tasks in the least number of steps.\n\n\
+    You should only respond in JSON format as described below \nResponse Format:" + {str(format)} + "\n\
+    Ensure the response can be parsed by Python json.loads \n\
+    The current time and date is Fri Apr 28 01:48:03 2023 \n\
+    This reminds you of these events from your past: " + {str(memory)}'
+
+    
+    messages = [
+            {
+                "role": "user",
+                "content": prompt
+            },
+            {
+                "role": "user",
+                "content": "Answer the question: " + data + "\n \
+                Determine which dialog to use, and respond using the format specified above (don't need to reply anything else other than JSON):" 
+            }
+        ]
+    
+    response = generate_openai_response(messages)
+
+    # response =  """{'output': {'generic': {'text': 'Morocco has many cities worth exploring, such as Marrakech, Rabat and Fez. Which city are you interested in exploring?', 'option': {'title': 'Cities to explore', 'options': [{'label': 'Marrakech', 'value': {'input': {'text': 'I am interested in exploring Marrakech'}}}, {'label': 'Rabat', 'value': {'input': {'text': 'I am interested in exploring Rabat'}}}, {'label': 'Fez', 'value': {'input': {'text': 'I am interested in exploring Fez'}}}, {'label': 'End conversation', 'value': {'input': {'text': 'End conversation'}}}]}}}}"""
+    # print(add_quotes_to_property_names(response))
+    corrected_json = correct_json(response)
+    print(corrected_json)
+    return corrected_json
 
 if __name__ == '__main__':
     app.run(port="3000",host='0.0.0.0')
