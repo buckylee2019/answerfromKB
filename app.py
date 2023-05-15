@@ -6,6 +6,7 @@ from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from requests import post
 import openai
 from json_utils.json_fix_general import correct_json,add_quotes_to_property_names
+from utils.chat_utils import ask
 
 app = Flask(__name__)
 
@@ -28,13 +29,21 @@ bam_url = "https://bam-api.res.ibm.com/v1/generate"
 def query_watson_discovery(query):
     return discovery.query(
         project_id=project_id,
-        collection_ids=["463da53b-0a79-a4c0-0000-0187b1d2fa4d"],
+        collection_ids=collection_list,
         natural_language_query=query,
-        count=5
+        passages={
+            "enabled":True,
+            "find_answers":True,
+            "per_document":True,
+            "count":20,
+            "fields":["text"],
+            "characters":280,
+            "max_per_document":1},
+        count=20,
     ).get_result()
 
 
-
+def bam_search(query):
     discovery_response = query_watson_discovery(query)
 
 
@@ -106,7 +115,8 @@ def query_watson_discovery(query):
 def generate_openai_response(messages):
     response = openai.ChatCompletion.create(
         model = "gpt-3.5-turbo-0301",
-        messages = messages
+        messages = messages,
+        max_tokens=1024
     )
     return response.choices[0].message.content.strip()
 
@@ -147,8 +157,8 @@ def openai_watson_discovery_response():
 
     inputText = "Question: " + query + "?"
     prompt = "Given the context provided below, answer the following question：" + query + "\n\n Context: \n"
-    for passage in discovery_response["results"][:3]:
-        prompt += "\n" + passage["text"][0]
+    for passage in discovery_response["results"][:5]:
+        prompt += "\n" + passage["document_passages"][0]["passage_text"]
     prompt += inputText
     messages = [
             {"role": "user", "content": prompt}
@@ -353,12 +363,21 @@ def chat():
         ]
     
     response = generate_openai_response(messages)
-
-    # response =  """{'output': {'generic': {'text': 'Morocco has many cities worth exploring, such as Marrakech, Rabat and Fez. Which city are you interested in exploring?', 'option': {'title': 'Cities to explore', 'options': [{'label': 'Marrakech', 'value': {'input': {'text': 'I am interested in exploring Marrakech'}}}, {'label': 'Rabat', 'value': {'input': {'text': 'I am interested in exploring Rabat'}}}, {'label': 'Fez', 'value': {'input': {'text': 'I am interested in exploring Fez'}}}, {'label': 'End conversation', 'value': {'input': {'text': 'End conversation'}}}]}}}}"""
-    # print(add_quotes_to_property_names(response))
     corrected_json = correct_json(response)
-    print(corrected_json)
+
     return corrected_json
+
+@app.route('/vector_search', methods=['POST'])
+def vectorsearch_response():
+    data = request.get_json()
+    query = data['query']
+    answer, reference = ask(query)
+    response = {
+        "answer": answer,
+        "reference": reference
+    }
+    return response
+
 
 if __name__ == '__main__':
     app.run(port="3000",host='0.0.0.0')
