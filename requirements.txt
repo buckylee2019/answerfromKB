@@ -24,3 +24,30 @@ tqdm==4.64.1
 urllib3==1.26.7
 Werkzeug==2.0.2
 ibm-watson==7.0.0
+langchain
+streamlit
+streamlit-chat-media
+retry
+duckduckgo-search
+transformers
+tabulate
+wikipedia
+faiss-cpu # if u dont have a GPU
+nest_asyncio
+torch
+# tensorflow >= 2.0 -- For other future models
+# flax -- For other future models
+pytest-playwright
+undetected-chromedriver>=3.2.1
+markdownify>=0.11.6
+hugchat
+EdgeGPT
+GoogleBard
+lark
+accelerate
+diffusers
+PyVirtualDisplay==3.0
+revChatGPT
+pinecone-client
+unstructured==0.8.1
+chromadb==0.3.29
